@@ -45,6 +45,14 @@ class WelcomViewController: UIViewController {
     }
     
     private func handleSignIn(success: Bool) {
-        
+        guard success else{
+            let alert = UIAlertController(title: "Oops!", message: "Somthing went wrong", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "Dismiss", style: .cancel, handler: nil))
+            present(alert, animated: true)
+            return
+        }
+        let mainAppTabBarVc = TabBarViewController()
+        mainAppTabBarVc.modalPresentationStyle = .fullScreen
+        present(mainAppTabBarVc, animated: true)
     }
 }
