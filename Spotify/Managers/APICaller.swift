@@ -28,11 +28,9 @@ final class APICaller {
                 }
                 do{
                     let result = try JSONDecoder().decode(UserProfile.self, from: data)
-                    print("Success Result \(result) ")
                     completeion(.success(result))
                 }
                 catch{
-                    print(error.localizedDescription)
                     completeion(.failure(error))
                 }
             }
@@ -43,6 +41,84 @@ final class APICaller {
     enum HTTPMethod: String {
         case GET
         case POST
+    }
+    
+    public func getRecomnadationsGenres(completion: @escaping ((Result<RecommendedGenresResponse,Error>)->()))  {
+        creatRequest(with: URL(string: Constans.baseAPIURL + "/recommendations/available-genre-seeds"), type: .GET) { (request) in
+            let task = URLSession.shared.dataTask(with: request) { (data, _, error) in
+                guard let data = data, error == nil else{
+                    completion(.failure(APIError.failedToGetData))
+                    return
+                }
+                do{
+                    let result = try JSONDecoder().decode(RecommendedGenresResponse.self, from: data)
+                    completion(.success(result))
+                }
+                catch{
+                    completion(.failure(error))
+                }
+            }
+            task.resume()
+        }
+    }
+    
+    public func getRecommendations(genres: Set<String>, completion: @escaping ((Result<RecommendationsResponse,Error>)->()))  {
+        let seeds = genres.joined(separator: ",")
+        creatRequest(with: URL(string: Constans.baseAPIURL + "/recommendations?limit=40&seed_genres=\(seeds)"), type: .GET) { (request) in
+            let task = URLSession.shared.dataTask(with: request) { (data, _, error) in
+                guard let data = data, error == nil else{
+                    completion(.failure(APIError.failedToGetData))
+                    return
+                }
+                do{
+                    let result = try JSONDecoder().decode(RecommendationsResponse.self, from: data)
+                    completion(.success(result))
+                }
+                catch{
+                    completion(.failure(error))
+                }
+            }
+            task.resume()
+        }
+    }
+    
+    public func getFeaturePlayLists(completion: @escaping ((Result<FeaturedPlaylistsResponse,Error>)->()))  {
+        creatRequest(with: URL(string: Constans.baseAPIURL + "/browse/featured-playlists?limit=2"), type: .GET) { (request) in
+            let task = URLSession.shared.dataTask(with: request) { (data, _, error) in
+                guard let data = data, error == nil else{
+                    completion(.failure(APIError.failedToGetData))
+                    return
+                }
+                do{
+                    let result = try JSONDecoder().decode(FeaturedPlaylistsResponse.self, from: data)
+                    completion(.success(result))
+                }
+                catch{
+                    completion(.failure(error))
+                }
+            }
+            task.resume()
+        }
+    }
+    
+    public func getNewReleases(completeion: @escaping ((Result<NewReleaseResponse, Error>))->()){
+        creatRequest(with: URL(string: Constans.baseAPIURL + "/browse/new-releases?limit=50"), type: .GET) { (result) in
+            let task = URLSession.shared.dataTask(with: result) { (data, _, error) in
+                guard let data = data, error == nil else{
+                    completeion(.failure(APIError.failedToGetData))
+                    return
+                }
+                
+                do{
+                    let result = try JSONDecoder().decode(NewReleaseResponse.self, from: data)
+                    completeion(.success(result))
+                }
+                catch{
+                    completeion(.failure(error))
+                }
+            }
+            task.resume()
+        }
     }
     
     // MARK: - Private

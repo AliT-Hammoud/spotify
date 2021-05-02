@@ -17,7 +17,27 @@ class HomeViewController: UIViewController {
                                                             style: .done,
                                                             target: self,
                                                             action: #selector(didTapSettings))
+        fetchData()
         
+    }
+    
+    private func fetchData(){
+        APICaller.shared.getRecomnadationsGenres { (result) in
+            switch result {
+            case .success(let model):
+                let genres = model.genres
+                var seeds = Set<String>()
+                while seeds.count < 5 {
+                    if let random = genres.randomElement(){
+                        seeds.insert(random)
+                    }
+                }
+                APICaller.shared.getRecommendations(genres: seeds) { _ in
+                    
+                }
+            case .failure(let error): break
+            }
+        }
     }
     
     @objc func didTapSettings(){
