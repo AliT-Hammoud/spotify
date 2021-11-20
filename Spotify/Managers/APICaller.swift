@@ -17,6 +17,61 @@ final class APICaller {
     enum APIError: Error{
         case failedToGetData
     }
+    
+    // MARK: - Albums
+    
+    public func getAlbumDetails(for album: Album, completion: @escaping (Result<AlbumDetailResponse, Error>) -> Void) {
+        creatRequest(
+            with: URL(string: Constans.baseAPIURL + "/albums/" + album.id),
+            type: .GET
+        ) { request in
+            let task = URLSession.shared.dataTask(with: request) { data, _, error in
+                guard let data = data, error == nil else {
+                    completion(.failure(APIError.failedToGetData))
+                    return
+                }
+                do{
+                    let result = try JSONDecoder().decode(AlbumDetailResponse.self, from: data)
+                    completion(.success(result))
+                }
+                catch {
+                    print(error)
+                    completion(.failure(error))
+                }
+            }
+            task.resume()
+        }
+    }
+    
+    // MARK: - Playlists
+    
+    public func getPlaylistDetails(for playlist: Playlist, completion: @escaping (Result<PlaylistDetailsResponse, Error>) -> Void) {
+        creatRequest(
+            with: URL(string: Constans.baseAPIURL + "/playlists/" + playlist.id),
+            type: .GET
+        ) { request in
+            let task = URLSession.shared.dataTask(with: request) { data, _, error in
+                guard let data = data, error == nil else {
+                    completion(.failure(APIError.failedToGetData))
+                    return
+                }
+                do{
+                    let result = try JSONDecoder().decode(PlaylistDetailsResponse.self, from: data)
+                    print(result)
+//                    completion(.success(result))
+                    
+                }
+                catch {
+                    completion(.failure(error))
+                }
+            }
+            task.resume()
+        }
+    }
+    
+    
+    // MARK: - Profile
+    
     public func getCurrentUserProfile(completeion: @escaping (Result<UserProfile,Error>)->()){
         creatRequest(with: URL(string: Constans.baseAPIURL + "/me"),
                      type: .GET
@@ -83,7 +138,7 @@ final class APICaller {
     }
     
     public func getFeaturePlayLists(completion: @escaping ((Result<FeaturedPlaylistsResponse,Error>)->()))  {
-        creatRequest(with: URL(string: Constans.baseAPIURL + "/browse/featured-playlists?limit=2"), type: .GET) { (request) in
+        creatRequest(with: URL(string: Constans.baseAPIURL + "/browse/featured-playlists?limit=20"), type: .GET) { (request) in
             let task = URLSession.shared.dataTask(with: request) { (data, _, error) in
                 guard let data = data, error == nil else{
                     completion(.failure(APIError.failedToGetData))
@@ -132,6 +187,7 @@ final class APICaller {
                              forHTTPHeaderField: "Authorization")
             request.httpMethod = type.rawValue
             request.timeoutInterval = 30
+            print("Request: \(request)")
             completeion(request)
         }
     }

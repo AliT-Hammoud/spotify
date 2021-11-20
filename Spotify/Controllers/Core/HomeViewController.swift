@@ -9,12 +9,16 @@ import UIKit
 // 19:43
 enum BrowseSectionType {
     case newRelease(viewModel: [NewReleasesCellViewModel])
-    case featuredPlayList(viewModel: [NewReleasesCellViewModel])
-    case recommendedTracks(viewModel: [NewReleasesCellViewModel])
+    case featuredPlayList(viewModel: [FeaturePlaylistCellViewModel])
+    case recommendedTracks(viewModel: [RecommendedTrackCellViewModel])
 }
 
 class HomeViewController: UIViewController {
 
+    private var newAlbums: [Album] = []
+    private var playlists: [Playlist] = []
+    private var tracks: [AudioTrack] = []
+    
     private var collectionView: UICollectionView = UICollectionView(
         frame: .zero,
         collectionViewLayout: UICollectionViewCompositionalLayout {sectionIndex, _ -> NSCollectionLayoutSection? in
@@ -140,6 +144,10 @@ class HomeViewController: UIViewController {
         playlists: [Playlist],
         tracks: [AudioTrack]
     ){
+        self.newAlbums = newAlbums
+        self.playlists = playlists
+        self.tracks = tracks
+        
         // configure models
         sections.append(.newRelease(viewModel: newAlbums.compactMap({
             return NewReleasesCellViewModel(name: $0.name,
@@ -147,8 +155,16 @@ class HomeViewController: UIViewController {
                                             numberOfTracks: $0.total_tracks,
                                             artistName: $0.artists.first?.name ?? "-")
         })))
-        sections.append(.featuredPlayList(viewModel: []))
-        sections.append(.recommendedTracks(viewModel: []))
+        sections.append(.featuredPlayList(viewModel: playlists.compactMap({
+            return FeaturePlaylistCellViewModel(name: $0.name,
+                                                artworkURL: URL(string: $0.images.first?.url ?? ""),
+                                                creatorName: $0.owner.display_name)
+        })))
+        sections.append(.recommendedTracks(viewModel: tracks.compactMap({
+            return RecommendedTrackCellViewModel(name: $0.name,
+                                                 artistName: $0.artists.first?.name ?? "-",
+                                                 artworkURL: URL(string: $0.album?.images.first?.url ?? "") )
+        })))
         collectionView.reloadData()
     }
     
@@ -195,7 +211,7 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
                     for: indexPath) as? FeaturePlaylistCollectionViewCell else {
                 return UICollectionViewCell()
             }
-            cell.backgroundColor = .systemGreen
+            cell.configure(with: viewModel[indexPath.row])
             return cell
         case .recommendedTracks(let viewModel):
             guard let cell = collectionView.dequeueReusableCell(
@@ -203,7 +219,7 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
                     for: indexPath) as? RecommendedTrackCollectionViewCell else {
                 return UICollectionViewCell()
             }
-            cell.backgroundColor = .systemBlue
+            cell.configure(with: viewModel[indexPath.row])
             return cell
         }
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "cell", for: indexPath)
@@ -217,6 +233,29 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
             cell.backgroundColor = .systemBlue
         }
         return cell
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        collectionView.deselectItem(at: indexPath, animated: true)
+        let section = sections[indexPath.section]
+        switch section {
+        case .featuredPlayList:
+            let playlist = playlists[indexPath.row]
+            let vc = PlaylistViewController(playlist: playlist)
+            vc.title = playlist.name
+            vc.navigationItem.largeTitleDisplayMode = .never
+            self.navigationController?.pushViewController(vc, animated: true)
+            break
+        case .newRelease:
+            let album = newAlbums[indexPath.row]
+            let vc = AlbumViewController(album: album)
+            vc.title = album.name
+            vc.navigationItem.largeTitleDisplayMode = .never
+            self.navigationController?.pushViewController(vc, animated: true)
+            break
+        case .recommendedTracks:
+            break
+        }
     }
     
     private static func createSectionLayout(section: Int) -> NSCollectionLayoutSection{
