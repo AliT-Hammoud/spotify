@@ -175,6 +175,51 @@ final class APICaller {
         }
     }
     
+//    MARK: - Category
+    
+    public func getCatergories(completion: @escaping (Result<[Category], Error>) -> Void) {
+        creatRequest(
+            with: URL(string: Constans.baseAPIURL + "/browse/categories?limit=40"),
+            type: .GET
+        ) { request in
+            let task = URLSession.shared.dataTask(with: request) { data, _ , error in
+                guard let data = data, error == nil else {
+                    completion(.failure(APIError.failedToGetData))
+                    return
+                }
+                do {
+                    let result = try JSONDecoder().decode(AllCategoriesResponse.self, from: data)
+                    completion(.success(result.categories.items))
+                } catch {
+                    completion(.failure(error))
+                }
+            }
+            task.resume()
+        }
+    }
+    
+    public func getCatergoryPlaylists(category: Category, completion: @escaping (Result<[Playlist], Error>) -> Void) {
+        creatRequest(
+            with: URL(string: Constans.baseAPIURL + "/browse/categories/\(category.id)/playlists?limit=50"),
+            type: .GET
+        ) { request in
+            let task = URLSession.shared.dataTask(with: request) { data, _ , error in
+                guard let data = data, error == nil else {
+                    completion(.failure(APIError.failedToGetData))
+                    return
+                }
+                do {
+                    let result = try JSONDecoder().decode(CategoryPlaylistsResponse.self, from: data)
+                    let playlists = result.playlists.items
+                    completion(.success(playlists))
+                } catch {
+                    completion(.failure(error))
+                }
+            }
+            task.resume()
+        }
+    }
+    
     // MARK: - Private
     private func creatRequest(with url: URL?, type: HTTPMethod, completeion: @escaping (URLRequest)->()){
         AuthManager.shared.withValidToken { token in
