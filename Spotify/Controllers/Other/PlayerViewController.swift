@@ -73,6 +73,10 @@ class PlayerViewController: UIViewController {
     @objc private func didTabAction() {
         print("didTabAction")
     }
+    
+    func refreshUI () {
+        self.configure()
+    }
 }
 
 

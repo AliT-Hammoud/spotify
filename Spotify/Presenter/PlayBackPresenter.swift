@@ -22,20 +22,17 @@ final class PlayBackPresenter {
     private var track: AudioTrack?
     private var tracks = [AudioTrack]()
     
+    var index = 0
+    
     var currentTrack: AudioTrack? {
         if let track = track, tracks.isEmpty {
             return track
         }else if let player = self.playerQueue, !tracks.isEmpty {
-            let item = player.currentItem
-            let items = player.items()
-            guard let index = items.firstIndex(where: {$0 == item}) else {
-                return nil
-            }
             return tracks[index]
         }
         return nil
     }
-    
+    var playerVc: PlayerViewController?
     var player: AVPlayer?
     var playerQueue: AVQueuePlayer?
 
@@ -58,6 +55,7 @@ final class PlayBackPresenter {
         viewController.present(UINavigationController(rootViewController: vc), animated: true) { [weak self ] in
             self?.player?.play()
         }
+        self.playerVc = vc
     }
     
     func startPlayback(
@@ -80,6 +78,7 @@ final class PlayBackPresenter {
         vc.dataSource = self
         vc.delegate = self
         viewController.present(UINavigationController(rootViewController: vc), animated: true, completion: nil)
+        self.playerVc = vc
     }
     
 }
@@ -106,7 +105,9 @@ extension PlayBackPresenter: PlayerViewControllerDelegate {
         if tracks.isEmpty {
             player?.pause()
         }else if let player = playerQueue {
-            playerQueue?.advanceToNextItem()
+            player.advanceToNextItem()
+            index += 1
+            playerVc?.refreshUI()
         }
     }
     
@@ -114,8 +115,12 @@ extension PlayBackPresenter: PlayerViewControllerDelegate {
         if tracks.isEmpty {
             player?.pause()
             player?.play()
-        }else if let player = playerQueue {
-            playerQueue?.advanceToNextItem()
+        }else if let firstItem = playerQueue?.items().first {
+            playerQueue?.pause()
+            playerQueue?.removeAllItems()
+            playerQueue = AVQueuePlayer(items: [firstItem])
+            playerQueue?.play()
+            playerQueue?.volume = 0.5
         }
     }
     
